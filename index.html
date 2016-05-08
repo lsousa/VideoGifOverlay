@@ -1,0 +1,123 @@
+<head>
+  <link href="public/css/video-js.min.css" rel="stylesheet">
+</head>
+
+<video id="example_video_1" class="video-js vjs-default-skin" controls preload="auto"  data-setup='{"inactivityTimeout": 0 }'>
+  <source src="videos/test.mp4" type='video/mp4' />
+</video>
+<canvas id="overlay" resize></canvas>
+
+<script src="public/js/paper-full.min.js"></script>
+<script src="public/js/video.min.js"></script>
+<script src="public/js/videojs.framebyframe.min.js"></script>
+<script type='text/javascript'>
+    var video = videojs("example_video_1", {
+      controls: true,
+      autoplay: true,
+      preload: 'auto',
+      plugins: {
+        framebyframe: {
+          fps: 23.98,
+          steps: [
+            { text: '-5', step: -5 },
+            { text: '-1', step: -1 },
+            { text: '+1', step: 1 },
+            { text: '+5', step: 5 },
+          ]
+        }
+      }
+    });
+
+  </script>
+
+  <script type="text/paperscript" canvas="overlay">
+  // Create a Paper.js Path to draw a line into it:
+  var path = new Path();
+  var mousePath = new Path();
+  var mousePathStartPoint = null;
+  // Give the stroke a color
+  path.strokeColor = 'red';
+  mousePath.strokeColor = 'yellow';
+  //var start = new Point(100, 100);
+  // Move to start and draw a line from there
+  //path.moveTo(start);
+  // Note the plus operator on Point objects.
+  // PaperScript does that for us, and much more!
+  //path.lineTo(start + [ 100, -50 ]);
+
+
+    var lines = [];
+    var points = [null, null, null];
+
+      function onMouseDown(e) {
+        for (var i = 0; i < points.length; i++) {
+          if (points[i] == null) {
+            points[i] = e.point;
+            switch (i) {
+              case 0:
+                video.pause();
+                path.add(points[i]);
+                mousePathStartPoint = points[i];
+                break;
+              case 1:
+                path.lineTo(points[i]);
+                mousePathStartPoint = points[i];
+                break;
+              case 2:
+                path.lineTo(points[i]);
+                mousePathStartPoint = null;
+                mousePath.removeSegments();
+
+
+                lines.push({time: video.currentTime(), points:points});
+
+                path = new Path();
+                path.strokeColor = 'red';
+                points = [null, null, null];
+                break;
+            }
+            break;
+          }
+        };
+      }
+
+
+function onMouseMove(e) {
+  if (mousePathStartPoint) {
+    mousePath.removeSegments();
+    mousePath.add(mousePathStartPoint);
+    mousePath.lineTo(e.point);
+  }
+}
+
+
+function drawLine() {
+  var currentTime = video.currentTime();
+  if (currentTime >= 7 && currentTime < 8){
+    //video.pause();
+  }
+}
+
+video.on('timeupdate',drawLine);
+
+
+video.on('ended',function() { console.log(lines) } );
+</script>
+
+
+<style>
+  #overlay {
+  position: absolute; 
+  top: 0px; 
+  width: 1280px;
+  height: 720px;
+  vertical-align: middle;
+  text-align: center;
+  z-index: 10;
+}
+
+.vjs-control-bar {
+  z-index:30;
+}
+
+</style>
